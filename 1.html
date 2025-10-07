@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Student Echoes — Final (White Icons on Dark)</title>
+</head>
+<body class="nav-visible-top">
+
+  <!-- TOP NAV (desktop) -->
+  <div id="navTop" class="nav nav-top">
+    <div class="nav-inner">
+      <div class="nav-left">
+        <div class="brand">
+          <div class="logo">SE</div>
+          <div style="display:flex;flex-direction:column">
+            <div class="site-title">Student Echoes</div>
+            <div style="font-size:11px;color:var(--muted)">Voices • Stories • Community</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-center" style="gap:8px">
+        <!-- icon buttons -->
+        <button class="nav-btn active" title="Home" id="navHome" onclick="showPage('feed')">
+          <!-- home monoline SVG -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10.5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <button class="nav-btn" title="Explore" id="navExplore" onclick="showToast('Explore — coming soon')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10.5a8.5 8.5 0 11-17 0 8.5 8.5 0 0117 0z"/><path d="M14 14l6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <button class="nav-btn" title="Market" id="navMarket" onclick="showToast('Marketplace — coming soon')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/><path d="M16 3H8v4h8V3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <button class="nav-btn" title="Profile" id="navProfile" onclick="showPage('profile')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 20a8 8 0 0116 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <button class="nav-btn" title="Create" id="navCreate" onclick="enterCompose()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="nav-right" style="gap:6px">
+        <button class="nav-btn" title="Notifications" onclick="toggleNotifDot(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="dot" id="notifDot" style="display:none"></span>
+        </button>
+        <button class="nav-btn" title="Logout" onclick="logout()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <div id="navBottom" class="nav nav-bottom hidden nav-bottom">
+    <div class="nav-inner" style="justify-content:space-around;">
+      <button class="nav-btn active" onclick="showPage('feed')"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10.5z" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="nav-btn" onclick="showToast('Explore coming soon')"><svg viewBox="0 0 24 24"><path d="M21 10.5a8.5 8.5 0 11-17 0 8.5 8.5 0 0117 0z"/><path d="M14 14l6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="nav-btn" onclick="showToast('Market coming soon')"><svg viewBox="0 0 24 24"><path d="M3 7h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/><path d="M16 3H8v4h8V3z" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="nav-btn" onclick="showPage('profile')"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z"/><path d="M4 20a8 8 0 0116 0" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="nav-btn" onclick="enterCompose()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="authWrap" class="auth-wrap" style="display:flex;">
+    <div class="auth-card panel" role="dialog" aria-labelledby="authTitle">
+      <h1 id="authTitle" style="margin:0;color:var(--white)">Student Echoes</h1>
+      <p class="muted" style="margin-top:8px">Sign up or login — your voice matters</p>
+
+      <input id="authUser" placeholder="Username" autocomplete="username" />
+      <input id="authPass" placeholder="Password" type="password" autocomplete="current-password" />
+
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:12px">
+        <button class="primary" onclick="onRegister()">Register</button>
+        <button class="small-btn" onclick="onLogin()">Log in</button>
+      </div>
+
+      <div id="authMsg" style="margin-top:10px; color:var(--muted); font-size:13px;"></div>
+    </div>
+  </div>
+
+  <div id="mainApp" style="display:none;">
+    <div class="app-wrap">
+      <div class="layout">
+        <!-- left -->
+        <aside class="left">
+          <div class="panel">
+            <div style="display:flex;align-items:center;gap:12px">
+              <img id="miniPic" src="" alt="avatar" style="width:56px;height:56px;border-radius:10px;object-fit:cover;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));">
+              <div>
+                <div id="miniUser" style="font-weight:700;color:var(--white)">User</div>
+                <div id="miniBio" class="muted" style="font-size:13px">Bio</div>
+              </div>
+            </div>
+            <hr style="margin:12px 0;border:none;height:1px;background:rgba(255,255,255,0.03)">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="small-btn" onclick="showPage('feed')">Home</button>
+              <button class="small-btn" onclick="showPage('profile')">Profile & Settings</button>
+              <button class="small-btn" onclick="showToast('Explore coming soon')">Explore</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- main -->
+        <main>
+          <div id="feedPage" class="page-section">
+            <div class="panel">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <img id="composerAvatar" src="" alt="avatar" class="profile-pic" style="width:48px;height:48px;border-radius:10px">
+                <div style="flex:1">
+                  <textarea id="txtPost" placeholder="What's on your mind?" oninput="saveDraft()" ></textarea>
+                  <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                    <input id="filePost" type="file" accept="image/*" style="color:var(--white)" />
+                    <div style="margin-left:auto;display:flex;gap:8px">
+                      <button class="small-btn" onclick="clearDraft()">Clear</button>
+                      <button class="primary" onclick="onCreatePost()">Post</button>
+                    </div>
+                  </div>
+                  <div id="draftNotice" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="postsList"></div>
+          </div>
+
+          <!-- PROFILE (separate page) -->
+          <div id="profilePage" class="page-section hidden">
+            <div class="panel" id="profileHeader">
+              <div style="display:flex;gap:12px;align-items:center">
+                <img id="profilePicBig" src="" class="profile-pic" alt="profile" style="width:88px;height:88px;border-radius:18px;">
+                <div style="flex:1">
+                  <h2 id="profileUser" style="margin:0;color:var(--white)">User</h2>
+                  <div id="profileBioMini" class="muted">Bio goes here</div>
+                  <div class="profile-stats" style="margin-top:8px">
+                    <div>Posts: <span id="statPosts">0</span></div>
+                    <div>Likes: <span id="statLikes">0</span></div>
+                    <div>Comments: <span id="statComments">0</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;margin-left:auto">
+                <label style="cursor:pointer">
+                  <input id="profilePicInput" type="file" accept="image/*" style="display:none" />
+                  <button class="small-btn">Change Photo</button>
+                </label>
+                <button class="small-btn" onclick="enterEditProfile()">Edit Profile</button>
+                <button class="small-btn" onclick="showPage('feed')">Back</button>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top:12px">
+              <label style="font-weight:700">Username</label>
+              <input id="profileUsername" class="input-inline" readonly style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--white)" />
+              <label style="font-weight:700;margin-top:8px">Bio</label>
+              <textarea id="bio" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--white)"></textarea>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="primary" onclick="updateBio()">Save Bio</button>
+                <button class="small-btn" onclick="cancelEditProfile()">Cancel</button>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700">Your Posts</div>
+                <div class="muted" style="font-size:13px"><span id="profilePostCount">0</span> posts</div>
+              </div>
+              <div id="profileGrid" class="profile-grid" style="margin-top:12px"></div>
+            </div>
+          </div>
+
+        </main>
+
+        <!-- right -->
+        <aside class="right">
+          <div class="panel">
+            <div style="display:flex;align-items:center;gap:12px">
+              <img id="miniPicRight" src="" class="profile-pic" alt="profile" style="width:64px;height:64px;border-radius:12px">
+              <div style="flex:1">
+                <div id="profileUserRight" style="font-weight:700;color:var(--white)">User</div>
+                <div id="profileBioMiniRight" class="muted">Bio goes here</div>
+                <div style="display:flex;gap:12px;margin-top:8px;color:var(--muted)">
+                  <div>Posts: <span id="statPostsRight">0</span></div>
+                  <div>Likes: <span id="statLikesRight">0</span></div>
+                  <div>Comments: <span id="statCommentsRight">0</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:16px">
+            <div style="font-weight:700;margin-bottom:8px">Suggestions</div>
+            <div class="muted">Follow classmates, join groups, and share your story.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal area -->
+  <div id="viewModal" style="display:none"></div>
+
+  <!-- toast -->
+  <div id="toast" aria-live="polite"></div>
+</body>
+</html>
