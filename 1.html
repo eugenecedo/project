@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="stylesheet" href="1.css" />
-<link rel="javascript" href="1.js" />
+<script src="1.js"></script>
 <title>Student Echoes — Final (White Icons on Dark)</title>
 </head>
 <body class="nav-visible-top">
@@ -59,7 +59,7 @@
   </div>
 
   <!-- BOTTOM NAV (mobile) -->
-  <div id="navBottom" class="nav nav-bottom hidden nav-bottom">
+  <div id="navBottom" class="nav nav-bottom hidden">
     <div class="nav-inner" style="justify-content:space-around;">
       <button class="nav-btn active" onclick="showPage('feed')"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10.5z" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <button class="nav-btn" onclick="showToast('Explore coming soon')"><svg viewBox="0 0 24 24"><path d="M21 10.5a8.5 8.5 0 11-17 0 8.5 8.5 0 0117 0z"/><path d="M14 14l6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -177,7 +177,6 @@
               <div id="profileGrid" class="profile-grid" style="margin-top:12px"></div>
             </div>
           </div>
-
         </main>
 
         <!-- right -->
@@ -208,8 +207,5 @@
 
   <!-- modal area -->
   <div id="viewModal" style="display:none"></div>
-
-  <!-- toast -->
-  <div id="toast" aria-live="polite"></div>
-</body>
-</html>
+  </body>
+  </html>
