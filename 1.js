@@ -1,35 +1,44 @@
+// storage keys
 const LS_USERS = 'se_users';
 const LS_POSTS = 'se_posts';
 const LS_CURRENT = 'se_current';
 const LS_DRAFT = 'se_draft';
-const LS_THEME = 'se_theme';
+const LS_SAVED_ITEMS = 'se_saved_items';
 
+// app state
 let users = JSON.parse(localStorage.getItem(LS_USERS) || '{}');
 let posts = JSON.parse(localStorage.getItem(LS_POSTS) || '[]');
+let savedMarket = JSON.parse(localStorage.getItem(LS_SAVED_ITEMS) || '[]');
 let currentUser = localStorage.getItem(LS_CURRENT) || null;
 
+// sample market items (persisted if user interacts)
+const MARKET_ITEMS_DEFAULT = [
+  { id: 'm1', title: 'Used Math Textbook', desc: 'Calculus 1, good condition', price: '₱250', img: 'https://picsum.photos/seed/book1/400/300' },
+  { id: 'm2', title: 'Laptop Sleeve', desc: '15-inch, padded', price: '₱350', img: 'https://picsum.photos/seed/sleeve/400/300' },
+  { id: 'm3', title: 'Sticker Pack', desc: 'College-themed stickers', price: '₱80', img: 'https://picsum.photos/seed/stickers/400/300' },
+  { id: 'm4', title: 'USB Flash Drive', desc: '32GB, fast', price: '₱150', img: 'https://picsum.photos/seed/usb/400/300' }
+];
+let marketItems = JSON.parse(localStorage.getItem('se_market') || 'null') || MARKET_ITEMS_DEFAULT;
+
 /* -----------------------
-   Utilities
+   Toast & UI utilities
    ----------------------- */
-function showToast(msg){
+function showToast(msg, timeout=2200){
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.style.background = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#00b4d8';
-  t.style.color = '#012';
-  t.style.padding = '10px 14px';
-  t.style.borderRadius = '10px';
-  t.style.position = 'fixed';
-  t.style.right = '18px';
-  t.style.bottom = '18px';
-  t.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
-  t.style.opacity = '1';
-  setTimeout(()=>{ t.style.opacity = '0' }, 2500);
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), timeout);
 }
+
 function saveUsers(){ localStorage.setItem(LS_USERS, JSON.stringify(users)); }
 function savePosts(){ localStorage.setItem(LS_POSTS, JSON.stringify(posts)); }
+function saveMarketState(){ localStorage.setItem('se_market', JSON.stringify(marketItems)); }
+function saveSavedItems(){ localStorage.setItem(LS_SAVED_ITEMS, JSON.stringify(savedMarket)); }
+
 function setCurrent(user){
   currentUser = user;
-  if(user) localStorage.setItem(LS_CURRENT, user); else localStorage.removeItem(LS_CURRENT);
+  if(user) localStorage.setItem(LS_CURRENT, user);
+  else localStorage.removeItem(LS_CURRENT);
 }
 
 /* -----------------------
@@ -66,30 +75,49 @@ function openApp(){
   loadDraft();
   updateCounts();
   showPage('feed', true);
+  renderMarket();
+  renderExplore();
+  renderSavedItems();
 }
 
 /* -----------------------
    Page switching
    ----------------------- */
-function showPage(page, instant=false){
-  const feed = document.getElementById('feedPage');
-  const profile = document.getElementById('profilePage');
-
-  // active nav icons
+function clearActiveNav(){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+}
+function showPage(page, instant=false){
+  const pages = ['feed','profile','explore','market'];
+  pages.forEach(p => {
+    const el = document.getElementById(p + 'Page');
+    if(el) el.classList.add('hidden');
+  });
+
+  clearActiveNav();
   if(page === 'profile'){
-    feed.classList.add('hidden'); profile.classList.remove('hidden');
+    document.getElementById('profilePage').classList.remove('hidden');
     document.getElementById('navProfile').classList.add('active');
     document.querySelectorAll('#navBottom .nav-btn')[3]?.classList.add('active');
     renderProfilePosts();
     refreshProfileUI();
+  } else if(page === 'explore'){
+    document.getElementById('explorePage').classList.remove('hidden');
+    document.getElementById('navExplore').classList.add('active');
+    document.querySelectorAll('#navBottom .nav-btn')[1]?.classList.add('active');
+    renderExplore();
+  } else if(page === 'market'){
+    document.getElementById('marketPage').classList.remove('hidden');
+    document.getElementById('navMarket').classList.add('active');
+    document.querySelectorAll('#navBottom .nav-btn')[2]?.classList.add('active');
+    renderMarket();
+    renderSavedItems();
   } else {
-    profile.classList.add('hidden'); feed.classList.remove('hidden');
+    document.getElementById('feedPage').classList.remove('hidden');
     document.getElementById('navHome').classList.add('active');
     document.querySelectorAll('#navBottom .nav-btn')[0]?.classList.add('active');
     renderPosts();
   }
-  // scroll behavior
+
   window.scrollTo({ top: 0, behavior: instant ? 'auto' : 'smooth' });
 }
 
@@ -168,7 +196,6 @@ function renderPosts(filter=''){
     const avatar = userObj.pic || `https://api.dicebear.com/6.x/identicon/svg?seed=${encodeURIComponent(post.user)}`;
     const liked = currentUser && post.likedBy.includes(currentUser);
 
-    // build comments html safely
     const commentsHtml = (post.comments || []).map(c => `<p><strong>@${escapeHtml(c.user)}</strong>: ${escapeHtml(c.text)}</p>`).join('');
 
     el.innerHTML = `
@@ -189,6 +216,7 @@ function renderPosts(filter=''){
         <button onclick="toggleLike(${post.id})">${liked ? '💔 Unlike' : '❤️ Like'} (${post.likedBy.length})</button>
         <button onclick="toggleCommentsArea(${post.id})">💬 Comment (${post.comments.length})</button>
         ${post.user === currentUser ? `<button onclick="onEditPost(${post.id})">✏️ Edit</button> <button onclick="onDeletePost(${post.id})" class="danger">🗑 Delete</button>` : ''}
+        <button onclick="openPostModalById(${post.id})" class="small-btn">View</button>
       </div>
       <div id="comments-area-${post.id}" class="comments" style="display:none">
         ${commentsHtml}
@@ -281,9 +309,12 @@ function refreshProfileUI(viewUser){
   document.getElementById('miniBio').textContent = userObj.bio || '';
   document.getElementById('composerAvatar').src = pic;
   document.getElementById('miniPic').src = pic;
+  document.getElementById('miniPicRight').src = pic;
   document.getElementById('profilePicBig').src = pic;
   document.getElementById('profileUser').textContent = u;
+  document.getElementById('profileUserRight').textContent = u;
   document.getElementById('profileBioMini').textContent = userObj.bio || "No bio yet";
+  document.getElementById('profileBioMiniRight').textContent = userObj.bio || "No bio yet";
   document.getElementById('profileUsername').value = u;
   document.getElementById('bio').value = userObj.bio || '';
 
@@ -378,6 +409,10 @@ function closePostModal(id){
   modalRoot.innerHTML = '';
   modalRoot.style.display = 'none';
 }
+function openPostModalById(id){
+  const post = posts.find(p => p.id === id);
+  if(post) openPostModal(post);
+}
 
 /* -----------------------
    Search / counts
@@ -400,7 +435,7 @@ function updateCounts(){
 }
 
 /* -----------------------
-   Init / misc
+   Logout / compose
    ----------------------- */
 function logout(){
   if(!confirm('Are you sure you want to logout?')) return;
@@ -437,6 +472,8 @@ document.addEventListener('change', (e)=>{
 (function init(){
   const cur = localStorage.getItem(LS_CURRENT);
   if(cur && users[cur]){ setCurrent(cur); openApp(); }
+  // wire saved market items
+  renderMarket();
 })();
 
 /* notify dot toggler (demo) */
@@ -468,7 +505,6 @@ function toggleNotifDot(btn){
   }
   window.addEventListener('scroll', ()=>{ if(!ticking){ window.requestAnimationFrame(onScroll); ticking = true; } }, {passive:true});
 
-  // also show/hide based on viewport width initially
   function adaptNav(){
     if(window.innerWidth <= 720){ navTop.style.display='none'; navBottom.style.display='block'; }
     else { navTop.style.display='block'; navBottom.style.display='none'; }
@@ -477,5 +513,186 @@ function toggleNotifDot(btn){
   adaptNav();
 })();
 
-/* After adding posts/users, update counts asap */
-window.addEventListener('storage', ()=> { users = JSON.parse(localStorage.getItem(LS_USERS) || '{}'); posts = JSON.parse(localStorage.getItem(LS_POSTS) || '[]'); updateCounts(); });
+/* storage sync */
+window.addEventListener('storage', ()=> { users = JSON.parse(localStorage.getItem(LS_USERS) || '{}'); posts = JSON.parse(localStorage.getItem(LS_POSTS) || '[]'); savedMarket = JSON.parse(localStorage.getItem(LS_SAVED_ITEMS) || '[]'); updateCounts(); });
+
+/* ============================
+   EXPLORE (search across posts)
+   ============================ */
+function renderExplore(){
+  const q = document.getElementById('exploreSearch').value.trim().toLowerCase();
+  const resultsRoot = document.getElementById('exploreResults');
+  resultsRoot.innerHTML = '';
+  const filtered = posts.filter(p => {
+    if(!q) return true;
+    return p.user.toLowerCase().includes(q) || (p.text && p.text.toLowerCase().includes(q));
+  });
+  document.getElementById('exploreCount').textContent = filtered.length + ' results';
+  if(filtered.length === 0){
+    resultsRoot.innerHTML = '<div class="panel muted">No results</div>';
+    return;
+  }
+  filtered.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    const userObj = users[p.user] || {bio:'',pic:''};
+    const pic = userObj.pic || `https://api.dicebear.com/6.x/identicon/svg?seed=${encodeURIComponent(p.user)}`;
+    div.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <img src="${pic}" style="width:48px;height:48px;border-radius:10px;object-fit:cover" />
+        <div style="flex:1">
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="font-weight:700;cursor:pointer" onclick="showProfile('${escapeHtml(p.user)}')">${escapeHtml(p.user)}</div>
+            <div style="font-size:12px;color:var(--muted)">${new Date(p.createdAt).toLocaleString()}</div>
+          </div>
+          <div style="margin-top:6px">${escapeHtml(p.text)}</div>
+          ${p.image ? `<img src="${p.image}" style="margin-top:8px;border-radius:8px;max-width:100%;">` : ''}
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="small-btn" onclick="toggleLike(${p.id})">${p.likedBy.includes(currentUser) ? '💔' : '❤️'} ${p.likedBy.length}</button>
+            <button class="small-btn" onclick="openPostModalById(${p.id})">View</button>
+          </div>
+        </div>
+      </div>
+    `;
+    resultsRoot.appendChild(div);
+  });
+}
+
+/* ============================
+   MARKETPLACE (mini catalog)
+   ============================ */
+function renderMarket(){
+  const q = document.getElementById('marketSearch').value.trim().toLowerCase();
+  const root = document.getElementById('marketList');
+  root.innerHTML = '';
+  const filtered = marketItems.filter(it => {
+    if(!q) return true;
+    return it.title.toLowerCase().includes(q) || it.desc.toLowerCase().includes(q);
+  });
+  if(filtered.length === 0){
+    root.innerHTML = '<div class="panel muted">No items found</div>';
+    return;
+  }
+  filtered.forEach(it => {
+    const el = document.createElement('div');
+    el.className = 'card market-card';
+    const isSaved = savedMarket.includes(it.id);
+    el.innerHTML = `
+      <img src="${it.img}" alt="${escapeHtml(it.title)}" />
+      <div style="flex:1">
+        <div style="font-weight:700">${escapeHtml(it.title)} <span style="font-weight:600;color:var(--muted);font-size:13px">· ${escapeHtml(it.price)}</span></div>
+        <div class="muted" style="margin-top:6px">${escapeHtml(it.desc)}</div>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <button class="small-btn" onclick="viewMarketItem('${it.id}')">View</button>
+          <button class="fav" onclick="toggleSaveItem('${it.id}')">${isSaved ? 'Saved ✓' : 'Save'}</button>
+        </div>
+      </div>
+    `;
+    root.appendChild(el);
+  });
+
+  renderSavedItems();
+}
+
+function viewMarketItem(id){
+  const it = marketItems.find(m=>m.id===id);
+  if(!it) return;
+  const modalRoot = document.getElementById('viewModal');
+  modalRoot.innerHTML = `
+    <div class="modal">
+      <div class="modal-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">${escapeHtml(it.title)} <span class="muted" style="font-weight:600;font-size:13px">· ${escapeHtml(it.price)}</span></div>
+          <div><button class="small-btn" onclick="closeMarketModal()">Close</button></div>
+        </div>
+        <img src="${it.img}" style="width:100%;max-height:320px;object-fit:cover;border-radius:8px;margin-top:8px"/>
+        <div style="margin-top:8px">${escapeHtml(it.desc)}</div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="primary" onclick="toggleSaveItem('${it.id}')">${savedMarket.includes(it.id) ? 'Unsave' : 'Save'}</button>
+          <button class="small-btn" onclick="fakeBuy('${it.id}')">Buy</button>
+        </div>
+      </div>
+    </div>
+  `;
+  modalRoot.style.display = 'block';
+}
+function closeMarketModal(){ document.getElementById('viewModal').innerHTML=''; document.getElementById('viewModal').style.display='none'; }
+
+function fakeBuy(id){
+  showToast('🛒 Purchase simulated — this is a demo');
+  closeMarketModal();
+}
+
+function toggleSaveItem(id){
+  const idx = savedMarket.indexOf(id);
+  if(idx >= 0){
+    savedMarket.splice(idx,1);
+    showToast('Removed from saved items');
+  } else {
+    savedMarket.unshift(id);
+    showToast('Saved to your items');
+  }
+  saveSavedItems();
+  renderMarket();
+  renderSavedItems();
+}
+
+function renderSavedItems(){
+  const root = document.getElementById('savedList');
+  const count = document.getElementById('savedCount');
+  root.innerHTML = '';
+  count.textContent = savedMarket.length + ' saved';
+  if(savedMarket.length === 0){ root.innerHTML = '<div class="muted">No saved items yet</div>'; return; }
+  savedMarket.forEach(id => {
+    const it = marketItems.find(m=>m.id===id);
+    if(!it) return;
+    const div = document.createElement('div');
+    div.className = 'grid-item';
+    div.innerHTML = `<img src="${it.img}" alt="${escapeHtml(it.title)}"/><div style="position:absolute;left:8px;bottom:8px;color:var(--white);font-weight:700">${escapeHtml(it.title)}</div>`;
+    div.onclick = ()=> viewMarketItem(it.id);
+    root.appendChild(div);
+  });
+}
+
+/* ============================
+   Saved helpers / initialization
+   ============================ */
+function ensureSavedInit(){ if(!Array.isArray(savedMarket)) savedMarket = []; }
+ensureSavedInit();
+
+/* small helper to open profile editing (simple UX) */
+function enterEditProfile(){
+  showPage('profile');
+  document.getElementById('bio').focus();
+}
+function cancelEditProfile(){
+  if(currentUser && users[currentUser]) document.getElementById('bio').value = users[currentUser].bio || '';
+  showToast('Edit cancelled');
+}
+
+// expose some to window for inline handlers
+window.showPage = showPage;
+window.onRegister = onRegister;
+window.onLogin = onLogin;
+window.onCreatePost = onCreatePost;
+window.clearDraft = clearDraft;
+window.saveDraft = saveDraft;
+window.enterCompose = enterCompose;
+window.logout = logout;
+window.toggleNotifDot = toggleNotifDot;
+window.toggleLike = toggleLike;
+window.toggleCommentsArea = toggleCommentsArea;
+window.addComment = addComment;
+window.onEditPost = onEditPost;
+window.onDeletePost = onDeletePost;
+window.showProfile = showProfile;
+window.updateBio = updateBio;
+window.updateProfilePic = updateProfilePic;
+window.openPostModal = openPostModal;
+window.closePostModal = closePostModal;
+window.openPostModalById = openPostModalById;
+window.toggleSaveItem = toggleSaveItem;
+window.viewMarketItem = viewMarketItem;
+
+// persist market array if it's default and not already in storage
+saveMarketState();
